@@ -1,6 +1,6 @@
 const express = require('express')
 const app = express()
-const port = 3000
+const port = 80
 const axios = require('axios')
 const api_key = require('./key.json')
 const base = 'http://www.airnowapi.org/aq/observation/zipCode/current/'
@@ -21,6 +21,7 @@ app.get('/', async (req, res) => {
   let response = await getUrl(url)
   let AQI = await getAQI(response.data)
   let level = await getLevel(parseInt(AQI.AQI))
+  console.log(`Current[${AQI.AQI}]: ${AQI.HourObserved}:00 ${AQI.LocalTimeZone} ${AQI.DateObserved}`)
   res.send(
     `<html>
   <head>
