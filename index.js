@@ -1,24 +1,26 @@
 const express = require('express')
 const app = express()
-const port = 80
+const port = process.env.PORT || 80
 const axios = require('axios')
 const api_key = require('./key.json')
 const base = 'http://www.airnowapi.org/aq/observation/zipCode/current/'
 
-const params = {
-  format: 'application/json',
-  zipCode: 94019,
-  distance: 5
-}
-
-
-let queryString = Object.keys(params).map(key => key + '=' + params[key]).join('&')
-let url = `${base}?${queryString}&API_KEY=${api_key}`
-console.log(`url: ${url}`)
-
-
 app.get('/', async (req, res) => {
-  let response = await getUrl(url)
+  // Default Zip: San Francisco
+  let defaultZip = 94109
+  let params = {
+    format: 'application/json',
+    zipCode: defaultZip,
+    distance: 5
+  }
+  if (req.query.zip) {
+    if (parseInt(req.query.zip) > 0 && parseInt(req.query.zip) <= 99999) {
+      params.zipCode = parseInt(req.query.zip)
+    }
+  }
+  console.log(`sending: ${JSON.stringify(params)}`)
+  let url = buildUrlString(base, api_key, params)
+  let response = await cUrl(url)
   let AQI = await getAQI(response.data)
   let level = await getLevel(parseInt(AQI.AQI))
   console.log(`Current[${AQI.AQI}]: ${AQI.HourObserved}:00 ${AQI.LocalTimeZone} ${AQI.DateObserved}`)
@@ -26,6 +28,7 @@ app.get('/', async (req, res) => {
     `<html>
   <head>
     <title>Current Air Quality</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
     body {
       background-color: ${level.color};
@@ -48,8 +51,9 @@ app.get('/', async (req, res) => {
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
+// Functions
 
-async function getLevel(AQI) {
+async function getLevel (AQI) {
   let quality = {
     'good': 'AQI: Good (0 - 50)<br />Air quality is considered satisfactory, and air pollution poses little or no risk.',
     'moderate': 'AQI: Moderate (51 - 100)<br />Air quality is acceptable; however, for some pollutants there may be a moderate health concern for a very small number of people who are unusually sensitive to air pollution.',
@@ -76,7 +80,7 @@ async function getLevel(AQI) {
   }
 }
 
-async function getAQI(obj, paramName = 'PM2.5') {
+async function getAQI (obj, paramName = 'PM2.5') {
   for (let that in obj) {
     let thisObj = obj[that]
     if (thisObj['ParameterName'] == paramName) {
@@ -85,6 +89,14 @@ async function getAQI(obj, paramName = 'PM2.5') {
   }
 }
 
-async function getUrl(url) {
+function buildUrlString (base, api_key, params) {
+  let queryString = Object.keys(params).map(key => key + '=' + params[key]).join('&')
+  console.log(`queryString: ${queryString}`)
+  let url = `${base}?${queryString}&API_KEY=${api_key}`
+  return url
+}
+
+async function cUrl (url) {
   return axios.get(url)
 }
+
