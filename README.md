@@ -1,6 +1,6 @@
 # Simple Air Quality Index
 
-This project uses EPA data to show the current AQI for SF, using their API. Many of the parameters are hardcoded, because SF is all I care about at the moment. Wildfires suck.
+This project uses EPA data to show the current AQI for SF, using their API. You can pass an optional zip query param in the url, to define the zip code; default is 94109. Wildfires suck.
 
 ### Installation
 
